@@ -1,0 +1,39 @@
+ROADMAP (plain version of ROADMAP.md) - checked 2026-10-24
+
+WHERE THINGS STAND
+31 tests pass and the code style checker is clean. The Prometheus alert rules pass Prometheus's own checker. The Kubernetes files produce 25 objects but have never run on a cluster. The project is not in git yet. Docker is not running, so the image has not been built since the rewrite. The original job description is saved outside the project at kforce-prep/Job_Description.txt.
+
+WHAT THE JOB ASKS FOR, AND WHAT THE PROJECT SHOWS
+- Backend services and APIs: built (the platform API and the model server).
+- Python: built. Java: nothing yet.
+- Containers on EKS: Dockerfile and Kubernetes files exist but neither has been run.
+- Connecting to approved enterprise data sources: missing. This is a core part of the job and the new project does not have it.
+- Login and permissions: built with a stand-in login. No real identity system yet.
+- Logging and metrics: built. Alert rules: checked. Dashboard: written, never seen rendered. Tracing: missing.
+- Design reviews: the architecture document covers tradeoffs and what is built versus only designed.
+- Reliability: database-down handling and team quotas are built. No load test, so no measured speed.
+- Testing standards: tests exist and were proven by breaking the code on purpose. The CI pipeline has never run. No pull request history.
+- Troubleshooting and runbooks: missing.
+- AWS: the network plan is checked by tests. Nothing is built in AWS.
+- GitHub: not in git yet.
+- Event-driven systems: missing (no queue).
+- Real identity products like Keycloak: missing.
+- Terraform: installed on the machine, no code yet.
+- Real databases: only SQLite so far.
+- Security-conscious habits: partly built (access log with user and team, production refuses test secrets, other teams' data looks like it does not exist).
+- AI and ML platform work: built (job admission, model registry, promote and rollback, serving).
+
+THE PLAN (all local and free; anything touching AWS or GitHub waits for your yes)
+Phase 0, about 15 minutes: put the project in git with a first commit, and move the old project report to the archive.
+Phase 1, about an hour, proving what is already written: start Docker, build the image, run the whole stack, and confirm the dashboard renders with a screenshot. Install kind for a local cluster, apply the Kubernetes files, and show one team cannot reach another. Push to GitHub and run the pipeline, only if you say yes.
+Phase 2, filling the job's gaps in order of interview value:
+  2a. Tracing, so one request can be followed across both services.
+  2b. Approved data-source connectors: each team gets a list of allowed sources, credentials come from settings, slow sources time out, and every read is logged.
+  2c. A real login system (Keycloak) instead of the stand-in.
+  2d. PostgreSQL instead of SQLite, which also fixes the two-at-once quota gap.
+  2e. A queue and a worker that actually runs jobs on the local cluster.
+  2f. Runbooks for the common failures, each tried once for real.
+Phase 3, stretch: Terraform for the network (checked and planned only, never applied without your yes), a load test to measure speed, a small Java piece, and safer model rollouts that send a slice of traffic first.
+
+BEFORE INTERVIEW 2
+If time is short: phase 0, the Docker part of phase 1, then 2a and 2b. Those close the two missing items the job lists by name.

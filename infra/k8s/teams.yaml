@@ -1,0 +1,55 @@
+# One namespace per team. The ResourceQuota is the cluster's hard ceiling and backs up the
+# platform API's own admission control (keep these numbers in step with platform_api/quota.py).
+apiVersion: v1
+kind: ResourceQuota
+metadata: {name: team-quota, namespace: team-a}
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 32Gi
+    limits.memory: 32Gi
+    requests.nvidia.com/gpu: "1"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata: {name: team-quota, namespace: team-b}
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 16Gi
+    limits.memory: 16Gi
+    requests.nvidia.com/gpu: "0"
+---
+# Gives pods that forget to set resources sane defaults, so one job cannot take a whole node.
+apiVersion: v1
+kind: LimitRange
+metadata: {name: defaults, namespace: team-a}
+spec:
+  limits:
+    - type: Container
+      default: {cpu: "1", memory: 2Gi}
+      defaultRequest: {cpu: 250m, memory: 512Mi}
+---
+apiVersion: v1
+kind: LimitRange
+metadata: {name: defaults, namespace: team-b}
+spec:
+  limits:
+    - type: Container
+      default: {cpu: "1", memory: 2Gi}
+      defaultRequest: {cpu: 250m, memory: 512Mi}
+---
+# Nothing may connect INTO a team's pods unless a later policy allows it (default deny).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny-ingress, namespace: team-a}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny-ingress, namespace: team-b}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]

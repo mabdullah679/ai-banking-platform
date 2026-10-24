@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-a
+  labels: {platform/team: team-a}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-b
+  labels: {platform/team: team-b}

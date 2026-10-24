@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: platform-api, namespace: platform, labels: {app: platform-api}}
+spec:
+  # One replica on purpose: SQLite is per pod. Move to PostgreSQL before scaling this out.
+  replicas: 1
+  selector: {matchLabels: {app: platform-api}}
+  template:
+    metadata: {labels: {app: platform-api}}
+    spec:
+      serviceAccountName: platform-api
+      securityContext: {runAsNonRoot: true, runAsUser: 10001}
+      containers:
+        - name: platform-api
+          image: ml-platform:latest   # in CI/CD, replace with the registry image tagged by git SHA
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: APP_ENV, value: production}
+            - {name: MODEL_STORE, value: /models}
+            - name: JWT_SECRET
+              valueFrom: {secretKeyRef: {name: platform-secrets, key: jwt-secret}}
+            - name: DEMO_PASSWORD
+              valueFrom: {secretKeyRef: {name: platform-secrets, key: demo-password}}
+          volumeMounts: [{name: model-store, mountPath: /models}]
+          livenessProbe:
+            httpGet: {path: /health, port: 8000}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /ready, port: 8000}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+      volumes:
+        - name: model-store
+          persistentVolumeClaim: {claimName: model-store}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: platform-api, namespace: platform}
+spec:
+  selector: {app: platform-api}
+  ports: [{port: 80, targetPort: 8000}]
+---
+# The registry files shared by the platform API (writes) and the model server (reads).
+# Needs ReadWriteMany storage, for example EFS on AWS. The storage class below is a placeholder.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: model-store, namespace: platform}
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: efs-sc
+  resources: {requests: {storage: 5Gi}}

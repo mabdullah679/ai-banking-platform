@@ -1,0 +1,40 @@
+# Least privilege: the platform API may manage Jobs only inside the team namespaces, nothing else.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: platform-api, namespace: platform}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: job-manager, namespace: team-a}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: platform-api-job-manager, namespace: team-a}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: job-manager}
+subjects:
+  - {kind: ServiceAccount, name: platform-api, namespace: platform}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: job-manager, namespace: team-b}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: platform-api-job-manager, namespace: team-b}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: job-manager}
+subjects:
+  - {kind: ServiceAccount, name: platform-api, namespace: platform}

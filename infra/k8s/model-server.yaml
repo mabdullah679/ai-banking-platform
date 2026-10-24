@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: model-server, namespace: platform, labels: {app: model-server}}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: model-server}}
+  strategy:
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  template:
+    metadata: {labels: {app: model-server}}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 10001}
+      containers:
+        - name: model-server
+          image: ml-platform:latest
+          command: ["uvicorn", "model_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: MODEL_POINTER, value: /models/team-a/churn/current.json}
+          volumeMounts: [{name: model-store, mountPath: /models, readOnly: true}]
+          # Alive does not depend on a model. Ready does, so no traffic arrives before a model loads.
+          livenessProbe:
+            httpGet: {path: /health, port: 8000}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /ready, port: 8000}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 512Mi}
+      volumes:
+        - name: model-store
+          persistentVolumeClaim: {claimName: model-store}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: model-server, namespace: platform}
+spec:
+  selector: {app: model-server}
+  ports: [{port: 80, targetPort: 8000}]
+---
+# Scale inference with load: between 2 and 10 pods, aiming for 70% CPU.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: model-server, namespace: platform}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: model-server}
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}
+---
+# During node drains, keep at least one model server up.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: model-server, namespace: platform}
+spec:
+  minAvailable: 1
+  selector: {matchLabels: {app: model-server}}

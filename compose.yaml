@@ -1,0 +1,43 @@
+# Local stack: platform API, model server, Prometheus and Grafana. Needs Docker running.
+services:
+  platform-api:
+    build: .
+    environment:
+      MODEL_STORE: /models
+      DATABASE_URL: sqlite:////tmp/platform.db
+    volumes:
+      - model-store:/models
+    ports:
+      - "8000:8000"
+
+  model-server:
+    build: .
+    command: ["uvicorn", "model_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      MODEL_POINTER: /models/team-a/churn/current.json
+    volumes:
+      - model-store:/models:ro
+    ports:
+      - "8001:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/rules:/etc/prometheus/rules:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+
+volumes:
+  model-store:

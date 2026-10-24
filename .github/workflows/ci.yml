@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Lint
+        run: ruff check .
+      - name: Test
+        run: pytest -q
+      - name: Check Prometheus rules
+        run: docker run --rm -v "$PWD/infra/prometheus/rules:/rules" --entrypoint promtool prom/prometheus:v3.5.0 check rules /rules/slo.yml
+      - name: Check Kubernetes manifests render
+        run: kubectl kustomize infra/k8s > /dev/null
+      - name: Build Docker image
+        run: docker build -t ml-platform:${{ github.sha }} .

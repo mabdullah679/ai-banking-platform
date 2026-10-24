@@ -1,0 +1,21 @@
+WORKFLOW (plain version of WORKFLOW.md)
+
+ENVIRONMENTS
+All cloud environments live in one AWS account (production, Sydney region), kept apart by separate networks and labels instead of separate accounts.
+Dev is your laptop. The agent can change it freely and commits to a feature branch.
+Staging will get its own network (VPC) in that account, labelled staging. It is not set up yet. Only the pipeline changes it, after a merge.
+Production has its own network, labelled production. Only the pipeline changes it, and only after a person approves.
+The two networks are never connected, so staging traffic cannot reach production. Moving to production means deploying the exact same image that passed staging, with production settings. Nothing is rebuilt. The pipeline logs in without stored keys.
+The tradeoff: separate networks keep traffic apart, but permissions, limits and the bill are shared across the whole account. A staging login with broad permissions could change production. To reduce that, each environment gets its own login role that can only touch resources with its own label, its own infrastructure state, and its own cost report. Separate accounts would remove the risk completely; we chose the simpler setup.
+
+BRANCHES AND MERGES
+1. The agent works on a branch named feature/something and saves small working steps.
+2. At a milestone it opens a pull request with at most 5 one-sentence points.
+3. It creates the state-of-affairs file for that pull request number with scripts/new-merge-request-doc.sh and fills it in. That file is the detailed technical record.
+4. A person reviews and merges. The agent never merges its own work.
+5. The main branch is protected: checks must pass and one person must approve.
+
+RULES FOR EVERY MERGE
+A safety check is only trusted after it was broken on purpose and a test caught it.
+Anything not actually run is listed as not proven.
+No cloud resource is created without a recorded yes, and everything is torn down and checked afterwards.
