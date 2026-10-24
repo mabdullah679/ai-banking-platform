@@ -8,7 +8,7 @@ services:
     volumes:
       - model-store:/models
     ports:
-      - "8000:8000"
+      - "${API_HOST_PORT:-8000}:8000"
 
   model-server:
     build: .
@@ -18,7 +18,7 @@ services:
     volumes:
       - model-store:/models:ro
     ports:
-      - "8001:8000"
+      - "${MODEL_HOST_PORT:-8001}:8000"
 
   prometheus:
     image: prom/prometheus:v3.5.0
@@ -26,7 +26,7 @@ services:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/rules:/etc/prometheus/rules:ro
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
 
   grafana:
     image: grafana/grafana:12.1.0
@@ -37,7 +37,7 @@ services:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      - "${GRAFANA_HOST_PORT:-3000}:3000"
 
 volumes:
   model-store:

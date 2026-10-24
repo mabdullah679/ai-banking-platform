@@ -1,0 +1,27 @@
+VISION (plain version of VISION.md)
+
+WHAT IT IS
+A web banking app reachable from anywhere over a secure connection, using only made-up data. Customers see their accounts and history, move money between their own fake accounts, upload statements, and get AI help understanding their spending. The app itself is kept simple. The real point is the infrastructure: how requests travel, how it fails safely, how we watch it, and how changes reach production.
+
+WHO USES IT
+Demo customers, who want balances, history, transfers, uploads and answers about their spending.
+Operations engineers, who want to know it is healthy, find slow requests, and undo a bad release in minutes.
+Product teams, who want to ship features through review, staging and production without touching infrastructure.
+
+FEATURES
+Login through a proper identity provider. Accounts, balances and history. Transfers between your own accounts that happen exactly once even if retried. Uploading made-up statements that are processed in the background, with bad rows reported. AI that sorts spending into categories, flags unusual transactions, and answers questions about your own data only. A record of every data read and every money movement.
+
+WHAT MUST BE TRUE FOR IT TO SUCCEED
+1. Only secure connections, and nothing reachable from the internet except through the front door.
+2. Money is always correct: a transfer never runs twice.
+3. One customer can never see another's data, including through the AI.
+4. Bad or hostile input is stopped at a known place with a known response.
+5. 99.5 percent of requests succeed over a month, and reads are fast. Alerts are about users, not machines.
+6. One request can be followed across every service.
+7. The database can be restored, and losing one data centre is survived, both practised.
+8. Every change goes through review, automatic checks, staging, then production with a person's approval, using the exact same build.
+9. Production stays under a set monthly budget and staging costs nothing when idle.
+10. Every document says what is proven and what is not.
+
+NOT GOALS
+Real money, real customer data, real banking licences, a polished screen design, or attack traffic against any environment.
