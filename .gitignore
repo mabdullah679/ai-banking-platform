@@ -7,3 +7,9 @@ model-store/
 .ruff_cache/
 .env
 *.local
+.DS_Store
+*.bak
+*.log
+.mypy_cache/
+.coverage
+htmlcov/

@@ -2,7 +2,7 @@
 
 Every requirement in the job description, what the project shows for it today, and what closes the gap. The JD text is kept outside the repo, at `kforce-prep/Job_Description.txt`, so it never gets pushed. Interview 1 added that the role leans toward **SRE/DevOps for AI/ML workloads shared by many teams**, with networking (VPC, subnets) in scope.
 
-Status as of 2026-10-24: 31 tests pass, ruff clean, Prometheus config and 12 rules pass `promtool`, Kubernetes manifests render 25 objects. Not a git repository yet. Docker daemon not running.
+Status as of 2026-10-24 (written before the repo was pushed; the rows below are that snapshot, not re-derived; see the README for what was re-checked on 2026-11-18): 31 tests pass, ruff clean, Prometheus config and 12 rules pass `promtool`, Kubernetes manifests render 25 objects. Not a git repository yet. Docker daemon not running.
 
 **Status key:** **Built** = code plus tests that were broken on purpose and went red. **Checked** = validated by a tool but never run live. **Written** = file exists, never validated or run. **Designed** = in docs only. **Missing** = nothing yet.
 

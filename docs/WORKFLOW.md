@@ -20,7 +20,7 @@ The VPCs are never peered, so staging traffic cannot reach production. "Promotio
 2. At a milestone it opens a pull request. The description has at most 5 one-sentence bullets.
 3. It runs `scripts/new-merge-request-doc.sh <pr-number>` and fills in the state-of-affairs file: the in-depth technical record of that merge.
 4. A human reviews and merges. The agent never merges its own pull request.
-5. `main` is protected: CI must pass and one approval is required.
+5. `main` is protected: a pull request and a passing `test` check are required, with zero required approvals (branch protection as read from the GitHub API on 2026-11-18). A human still reviews and merges by convention, not by rule.
 
 ## Rules that apply to every merge
 

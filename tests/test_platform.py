@@ -22,6 +22,20 @@ def test_health_and_ready(client: TestClient) -> None:
     assert client.get("/ready").status_code == 200
 
 
+# With the database down, readiness fails (503) while liveness stays 200.
+def test_ready_fails_when_database_down(client: TestClient) -> None:
+    class DeadSession:
+        def execute(self, *args: object, **kwargs: object) -> None:
+            raise OperationalError("SELECT 1", {}, Exception("connection refused"))
+
+    def dead_db():
+        yield DeadSession()
+
+    app.dependency_overrides[get_db] = dead_db
+    assert client.get("/ready").status_code == 503
+    assert client.get("/health").status_code == 200
+
+
 # Wrong password is 401, no token is 401, a forged token is 401, an expired token is 401.
 def test_authentication_failures(client: TestClient) -> None:
     bad = client.post("/token", json={"username": "alice", "password": "nope"})

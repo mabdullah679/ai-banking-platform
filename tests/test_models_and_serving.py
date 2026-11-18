@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from model_server.main import create_app
@@ -115,6 +116,26 @@ def test_bad_version_keeps_old_model(tmp_path: Path) -> None:
     os.utime(ptr, ns=(1, 1))  # make the change visible even if the clock tick is too coarse
     response = server.post("/predict", json={"features": [2]})
     assert response.status_code == 200 and response.json()["version"] == 1
+    assert "model_reload_errors 1.0" in server.get("/metrics").text
+
+
+# Bad JSON or a missing key in a new version is refused; the old model keeps serving.
+@pytest.mark.parametrize(
+    "artifact_text",
+    ["{not json", json.dumps({"weights": [1.0]}), json.dumps({"bias": 0})],
+)
+def test_malformed_version_keeps_old_model(tmp_path: Path, artifact_text: str) -> None:
+    folder = tmp_path / "m"
+    folder.mkdir()
+    (folder / "v1.json").write_text(json.dumps({"weights": [1.0], "bias": 0}))
+    (folder / "v2.json").write_text(artifact_text)
+    ptr = folder / "current.json"
+    ptr.write_text(json.dumps({"name": "m", "version": 1, "artifact": "v1.json"}))
+    server = TestClient(create_app(ptr))
+    assert server.post("/predict", json={"features": [2]}).json()["version"] == 1
+    ptr.write_text(json.dumps({"name": "m", "version": 2, "artifact": "v2.json"}))
+    os.utime(ptr, ns=(1, 1))
+    assert server.post("/predict", json={"features": [2]}).json()["version"] == 1
     assert "model_reload_errors 1.0" in server.get("/metrics").text
 
 
